@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PVR Phoenix Mall — Demo Showtimes | Cinema Marathon</title>
+    <style>
+      :root {
+        font-family: system-ui, sans-serif;
+        color: #18181b;
+        background: #fafafa;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+        max-width: 880px;
+      }
+      h1 {
+        font-size: 1.4rem;
+        margin: 0 0 4px;
+      }
+      .meta {
+        color: #71717a;
+        margin-bottom: 24px;
+      }
+      .movie {
+        background: #fff;
+        border: 1px solid #e4e4e7;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 14px;
+      }
+      .movie h2 {
+        margin: 0 0 4px;
+        font-size: 1.1rem;
+      }
+      .runtime {
+        color: #71717a;
+        font-size: 0.85rem;
+        margin-bottom: 10px;
+      }
+      .times {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .times button {
+        border: 1px solid #c4b5fd;
+        background: #f5f3ff;
+        color: #5b21b6;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .times button:hover {
+        background: #ede9fe;
+      }
+      .note {
+        margin-top: 24px;
+        padding: 12px 14px;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        color: #1e3a8a;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>PVR Phoenix Mall</h1>
+    <p class="meta">Today · Demo cinema page (not BookMyShow)</p>
+
+    <article class="movie">
+      <h2>Dune: Part Two</h2>
+      <p class="runtime">2h 46m · IMAX</p>
+      <div class="times">
+        <button type="button">10:00 AM</button>
+        <button type="button">02:15 PM</button>
+        <button type="button">06:30 PM</button>
+        <button type="button">10:45 PM</button>
+      </div>
+    </article>
+
+    <article class="movie">
+      <h2>Inside Out 2</h2>
+      <p class="runtime">1h 36m · 2D</p>
+      <div class="times">
+        <button type="button">09:30 AM</button>
+        <button type="button">12:00 PM</button>
+        <button type="button">03:45 PM</button>
+        <button type="button">07:15 PM</button>
+      </div>
+    </article>
+
+    <article class="movie">
+      <h2>Oppenheimer</h2>
+      <p class="runtime">3h 0m · IMAX</p>
+      <div class="times">
+        <button type="button">11:00 AM</button>
+        <button type="button">03:00 PM</button>
+        <button type="button">07:00 PM</button>
+      </div>
+    </article>
+
+    <article class="movie">
+      <h2>Deadpool &amp; Wolverine</h2>
+      <p class="runtime">2h 8m · 3D</p>
+      <div class="times">
+        <button type="button">10:30 AM</button>
+        <button type="button">01:30 PM</button>
+        <button type="button">04:45 PM</button>
+        <button type="button">08:00 PM</button>
+      </div>
+    </article>
+
+    <article class="movie">
+      <h2>The Wild Robot</h2>
+      <p class="runtime">1h 42m · 2D</p>
+      <div class="times">
+        <button type="button">11:45 AM</button>
+        <button type="button">02:45 PM</button>
+        <button type="button">05:30 PM</button>
+        <button type="button">08:30 PM</button>
+      </div>
+    </article>
+
+    <p class="note">
+      <strong>Local demo:</strong> open this file via the extension’s optional test page,
+      or load the core scripts in the browser console. For the full extension UI, use a
+      BookMyShow/District cinema page after loading the unpacked extension. You can also
+      temporarily add <code>file:///*</code> + this demo to
+      <code>content_scripts.matches</code> for offline testing.
+    </p>
+
+    <!-- Inline mini-runner so opening this file alone still demos the algorithm -->
+    <script src="../src/core/time.js"></script>
+    <script src="../src/core/schedule.js"></script>
+    <script src="../src/adapters/generic.js"></script>
+    <script>
+      const scrape = CinemaAdapterGeneric.scrape(document);
+      const screenings = CinemaSchedule.normalizeScreenings(scrape.rows, scrape.day, {
+        venue: scrape.venue,
+      });
+      const result = CinemaSchedule.findMaxMarathon(screenings, { bufferMinutes: 15 });
+      const pre = document.createElement("pre");
+      pre.style.cssText =
+        "background:#18181b;color:#f4f4f5;padding:14px;border-radius:12px;overflow:auto;font-size:12px;";
+      pre.textContent =
+        "Marathon result (buffer 15m)\n" +
+        "Max movies: " +
+        result.maxCount +
+        "\n" +
+        result.path
+          .map((s, i) => {
+            const start = CinemaTime.formatClock(new Date(s.start));
+            const end = CinemaTime.formatClock(new Date(s.end));
+            return `${i + 1}. ${start}–${end}  ${s.title}`;
+          })
+          .join("\n");
+      document.body.appendChild(pre);
+
+      result.path.forEach((s, i) => {
+        if (s.el) {
+          s.el.style.outline = "2px solid #7c3aed";
+          s.el.style.outlineOffset = "2px";
+          s.el.title = "Marathon #" + (i + 1);
+        }
+      });
+    </script>
+  </body>
+</html>

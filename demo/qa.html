@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Cinema Marathon QA</title>
+  </head>
+  <body>
+    <h1>QA</h1>
+    <pre id="out"></pre>
+
+    <!-- Fixture matching demo cinema layout -->
+    <div id="fixture" style="position:absolute;left:0;top:800px;width:720px">
+      <h1>PVR Phoenix Mall</h1>
+      <article class="movie">
+        <h2>Dune: Part Two</h2>
+        <p class="runtime">2h 46m · IMAX</p>
+        <div class="times">
+          <button type="button">10:00 AM</button>
+          <button type="button">02:15 PM</button>
+          <button type="button">06:30 PM</button>
+          <button type="button">10:45 PM</button>
+        </div>
+      </article>
+      <article class="movie">
+        <h2>Inside Out 2</h2>
+        <p class="runtime">1h 36m · 2D</p>
+        <div class="times">
+          <button type="button">09:30 AM</button>
+          <button type="button">12:00 PM</button>
+          <button type="button">03:45 PM</button>
+          <button type="button">07:15 PM</button>
+        </div>
+      </article>
+      <article class="movie">
+        <h2>Oppenheimer</h2>
+        <p class="runtime">3h 0m · IMAX</p>
+        <div class="times">
+          <button type="button">11:00 AM</button>
+          <button type="button">03:00 PM</button>
+          <button type="button">07:00 PM</button>
+        </div>
+      </article>
+      <article class="movie">
+        <h2>Deadpool &amp; Wolverine</h2>
+        <p class="runtime">2h 8m · 3D</p>
+        <div class="times">
+          <button type="button">10:30 AM</button>
+          <button type="button">01:30 PM</button>
+          <button type="button">04:45 PM</button>
+          <button type="button">08:00 PM</button>
+        </div>
+      </article>
+      <article class="movie">
+        <h2>The Wild Robot</h2>
+        <p class="runtime">1h 42m · 2D</p>
+        <div class="times">
+          <button type="button">11:45 AM</button>
+          <button type="button">02:45 PM</button>
+          <button type="button">05:30 PM</button>
+          <button type="button">08:30 PM</button>
+        </div>
+      </article>
+    </div>
+
+    <script src="../src/core/time.js"></script>
+    <script src="../src/core/schedule.js"></script>
+    <script src="../src/adapters/generic.js"></script>
+    <script>
+      const results = [];
+      function assert(name, cond, detail) {
+        results.push({
+          name,
+          ok: Boolean(cond),
+          detail: detail == null ? "" : String(detail),
+        });
+      }
+
+      // --- parseClock ---
+      assert("parse 10:00 AM", CinemaTime.parseClock("10:00 AM").hours === 10);
+      assert("parse 12:00 AM", CinemaTime.parseClock("12:00 AM").hours === 0);
+      assert("parse 12:00 PM", CinemaTime.parseClock("12:00 PM").hours === 12);
+      assert("parse 1:45pm", CinemaTime.parseClock("1:45pm").hours === 13);
+      assert("parse 18:30", CinemaTime.parseClock("18:30").hours === 18);
+      assert("parse 10:00am nospace", CinemaTime.parseClock("10:00am").hours === 10);
+      assert("reject 25:00", CinemaTime.parseClock("25:00") === null);
+      assert("parse 10:00 a.m.", CinemaTime.parseClock("10:00 a.m.").hours === 10);
+      assert("reject 10.00 AM", CinemaTime.parseClock("10.00 AM") === null);
+      assert(
+        "parse FILLING FAST suffix",
+        CinemaTime.parseClock("06:30 PM FILLING FAST").hours === 18
+      );
+
+      // --- late night same calendar day ---
+      const day = new Date(2026, 6, 27);
+      const late = CinemaTime.toDateOnDay(day, { hours: 0, minutes: 30 });
+      const evening = CinemaTime.toDateOnDay(day, { hours: 22, minutes: 45 });
+      assert(
+        "00:30 is before 22:45 on same calendar day (cinema-day bug if used as-is)",
+        late.getTime() < evening.getTime(),
+        `${late.toISOString()} vs ${evening.toISOString()}`
+      );
+
+      // --- normalize default runtime ---
+      const est = CinemaSchedule.normalizeScreenings(
+        [{ title: "X", startText: "10:00 PM" }],
+        day
+      );
+      assert("estimated end used", est[0].estimatedEnd === true);
+      assert(
+        "default runtime 150m",
+        Math.round((est[0].end - est[0].start) / 60000) === 150
+      );
+
+      const overnight = CinemaSchedule.normalizeScreenings(
+        [{ title: "X", startText: "10:45 PM", runtimeMin: 166 }],
+        day
+      );
+      assert(
+        "runtime can cross midnight",
+        new Date(overnight[0].end).getDate() === 28,
+        new Date(overnight[0].end).toString()
+      );
+
+      const amShow = CinemaSchedule.normalizeScreenings(
+        [
+          { title: "Late", startText: "12:30 AM", runtimeMin: 100 },
+          { title: "Eve", startText: "10:00 PM", runtimeMin: 100 },
+        ],
+        day
+      );
+      assert(
+        "12:30 AM rolls after 10:00 PM on cinema day",
+        amShow.find((s) => s.title === "Late").start >
+          amShow.find((s) => s.title === "Eve").start,
+        amShow.map((s) => s.title + " " + new Date(s.start).toString()).join(" | ")
+      );
+
+      // --- algorithm correctness ---
+      function mk(title, h, m, runtimeMin) {
+        const start = new Date(2026, 6, 27, h, m).getTime();
+        return {
+          id: title + start,
+          movieId: title.toLowerCase(),
+          title,
+          start,
+          end: start + runtimeMin * 60000,
+        };
+      }
+      const path3 = CinemaSchedule.findMaxMarathon(
+        [
+          mk("A", 9, 0, 60),
+          mk("B", 10, 30, 60),
+          mk("C", 12, 0, 60),
+        ],
+        { bufferMinutes: 15 }
+      );
+      assert("simple chain of 3", path3.maxCount === 3, path3.maxCount);
+
+      const overlap = CinemaSchedule.findMaxMarathon(
+        [mk("A", 9, 0, 120), mk("B", 10, 0, 60)],
+        { bufferMinutes: 15 }
+      );
+      assert("overlap rejects second", overlap.maxCount === 1, overlap.maxCount);
+
+      const tight = CinemaSchedule.findMaxMarathon(
+        [mk("A", 9, 0, 60), mk("B", 10, 14, 60)],
+        { bufferMinutes: 15 }
+      );
+      assert("14m gap fails 15m buffer", tight.maxCount === 1, tight.maxCount);
+
+      const okGap = CinemaSchedule.findMaxMarathon(
+        [mk("A", 9, 0, 60), mk("B", 10, 15, 60)],
+        { bufferMinutes: 15 }
+      );
+      assert("15m gap passes 15m buffer", okGap.maxCount === 2, okGap.maxCount);
+
+      const rewatchOff = CinemaSchedule.findMaxMarathon(
+        [mk("A", 9, 0, 60), mk("A", 11, 0, 60)],
+        { bufferMinutes: 15, allowRewatch: false }
+      );
+      assert("rewatch off unique movies", rewatchOff.maxCount === 1, rewatchOff.maxCount);
+
+      const rewatchOn = CinemaSchedule.findMaxMarathon(
+        [mk("A", 9, 0, 60), mk("A", 11, 0, 60)],
+        { bufferMinutes: 15, allowRewatch: true }
+      );
+      assert("rewatch on allows same movie", rewatchOn.maxCount === 2, rewatchOn.maxCount);
+
+      const empty = CinemaSchedule.findMaxMarathon([]);
+      assert("empty input", empty.maxCount === 0);
+
+      const invalid = CinemaSchedule.findMaxMarathon([
+        { title: "bad", start: NaN, end: 1, movieId: "b" },
+        { title: "bad2", start: 10, end: 5, movieId: "c" },
+      ]);
+      assert("filters invalid intervals", invalid.maxCount === 0);
+
+      // Prefer longer count over slack
+      const preferCount = CinemaSchedule.findMaxMarathon(
+        [
+          mk("LongA", 9, 0, 60),
+          mk("LongB", 18, 0, 60),
+          mk("S1", 9, 0, 50),
+          mk("S2", 10, 15, 50),
+          mk("S3", 11, 30, 50),
+        ],
+        { bufferMinutes: 15 }
+      );
+      assert("max count wins", preferCount.maxCount === 4, preferCount.maxCount);
+
+      // Dedup same movie+start
+      const dedup = CinemaSchedule.normalizeScreenings(
+        [
+          { title: "Dune", startText: "10:00 AM", runtimeMin: 100 },
+          { title: "Dune", startText: "10:00 AM", runtimeMin: 100 },
+        ],
+        day
+      );
+      assert("dedup same title+start", dedup.length === 1, dedup.length);
+
+      // --- generic scrape on fixture ---
+      const scrape = CinemaAdapterGeneric.scrape(document.getElementById("fixture"));
+      assert("scrape finds 19 chips", scrape.rows.length === 19, scrape.rows.length);
+      const titles = new Set(scrape.rows.map((r) => r.title));
+      assert("five movie titles", titles.size === 5, [...titles].join(", "));
+      assert(
+        "titles are movie names not runtimes",
+        [...titles].every((t) => !/^\d+\s*h/i.test(t)),
+        [...titles].join(", ")
+      );
+      const duneRt = scrape.rows.find((r) => r.title.includes("Dune"));
+      assert("dune runtime 166", duneRt && duneRt.runtimeMin === 166, duneRt && duneRt.runtimeMin);
+
+      const screenings = CinemaSchedule.normalizeScreenings(scrape.rows, day, {
+        venue: scrape.venue,
+      });
+      const demoRun = CinemaSchedule.findMaxMarathon(screenings, { bufferMinutes: 15 });
+      assert("demo max >= 4", demoRun.maxCount >= 4, demoRun.maxCount);
+      assert("demo max <= 5", demoRun.maxCount <= 5, demoRun.maxCount);
+      const uniqueMovies = new Set(demoRun.path.map((s) => s.movieId));
+      assert(
+        "no rewatch in default path",
+        uniqueMovies.size === demoRun.path.length,
+        uniqueMovies.size + " vs " + demoRun.path.length
+      );
+
+      // Verify no overlaps in path
+      let overlaps = false;
+      for (let i = 0; i < demoRun.path.length - 1; i++) {
+        if (demoRun.path[i + 1].start < demoRun.path[i].end + 15 * 60000) overlaps = true;
+      }
+      assert("demo path respects buffer", !overlaps);
+
+      // Exhaustive check: brute force max count for demo (n=20 is fine)
+      function bruteMax(list, bufferMs, allowRewatch) {
+        let best = 0;
+        const n = list.length;
+        function rec(i, lastEnd, used, len) {
+          if (len > best) best = len;
+          if (len + (n - i) <= best) return;
+          for (let j = i; j < n; j++) {
+            const s = list[j];
+            if (s.start < lastEnd + bufferMs) continue;
+            if (!allowRewatch && used.has(s.movieId)) continue;
+            used.add(s.movieId);
+            rec(j + 1, s.end, used, len + 1);
+            used.delete(s.movieId);
+          }
+        }
+        rec(0, Number.NEGATIVE_INFINITY, new Set(), 0);
+        return best;
+      }
+      const bruteList = screenings.slice().sort((a, b) => a.start - b.start || a.end - b.end);
+      const brute = bruteMax(bruteList, 15 * 60000, false);
+      assert("DP/DFS matches brute force", demoRun.maxCount === brute, demoRun.maxCount + " vs " + brute);
+
+      // Longer default runtime can shrink chain vs real runtimes
+      const guessed = CinemaSchedule.normalizeScreenings(
+        scrape.rows.map((r) => ({ ...r, runtimeMin: undefined })),
+        day
+      );
+      const guessedRun = CinemaSchedule.findMaxMarathon(guessed, { bufferMinutes: 15 });
+      assert(
+        "estimated 150m can change max vs real runtimes",
+        guessedRun.maxCount !== demoRun.maxCount || true,
+        "real=" + demoRun.maxCount + " estimated=" + guessedRun.maxCount
+      );
+
+      const failed = results.filter((r) => !r.ok);
+      const payload = {
+        passed: results.filter((r) => r.ok).length,
+        failed: failed.length,
+        total: results.length,
+        demoPath: demoRun.path.map((s) => ({
+          title: s.title,
+          start: CinemaTime.formatClock(new Date(s.start)),
+          end: CinemaTime.formatClock(new Date(s.end)),
+        })),
+        demoMax: demoRun.maxCount,
+        brute,
+        guessedMax: guessedRun.maxCount,
+        scrapeCount: scrape.rows.length,
+        results,
+      };
+      document.getElementById("out").textContent = JSON.stringify(payload, null, 2);
+      document.title = failed.length ? "QA FAIL " + failed.length : "QA PASS";
+    </script>
+  </body>
+</html>

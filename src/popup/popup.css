@@ -1,0 +1,79 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  width: 300px;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: #12121a;
+  color: #f4f4f5;
+}
+
+main {
+  padding: 14px 16px 16px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.lead {
+  margin: 6px 0 14px;
+  font-size: 12px;
+  color: #a1a1aa;
+  line-height: 1.45;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+
+.field input {
+  background: #1c1c28;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #fff;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  color: #d4d4d8;
+  margin-bottom: 14px;
+}
+
+.hint {
+  font-size: 11px;
+  color: #a1a1aa;
+  background: rgba(124, 58, 237, 0.12);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  border-radius: 10px;
+  padding: 10px;
+  margin: 0 0 12px;
+  line-height: 1.45;
+}
+
+.steps {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 11px;
+  color: #d4d4d8;
+  line-height: 1.55;
+}
+
+.status {
+  margin: 12px 0 0;
+  font-size: 11px;
+  color: #86efac;
+}

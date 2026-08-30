@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cinema Marathon Planner</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Cinema Marathon</h1>
+      <p class="lead">
+        Plan how many movies you can chain in one day at the same theater.
+      </p>
+
+      <label class="field">
+        <span>Default buffer (minutes)</span>
+        <input id="buffer" type="number" min="0" max="60" step="5" value="15" />
+      </label>
+
+      <label class="check">
+        <input id="rewatch" type="checkbox" />
+        <span>Allow watching the same movie twice</span>
+      </label>
+
+      <p class="hint">
+        Open a <strong>cinema showtimes</strong> page on BookMyShow or District,
+        then use the purple <strong>Marathon</strong> button on the page.
+      </p>
+
+      <ol class="steps">
+        <li>Go to a theater’s show list for a date</li>
+        <li>Click <em>Marathon</em> (bottom-right)</li>
+        <li>Adjust buffer &amp; highlight the path</li>
+      </ol>
+
+      <p id="status" class="status" hidden></p>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

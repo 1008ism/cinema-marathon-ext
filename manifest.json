@@ -1,0 +1,59 @@
+{
+  "manifest_version": 3,
+  "name": "Cinema Marathon Planner",
+  "version": "0.1.0",
+  "description": "See how many movies you can chain in one day at the same theater on BookMyShow and District.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://in.bookmyshow.com/*",
+    "https://*.bookmyshow.com/*",
+    "https://www.district.in/*",
+    "https://district.in/*"
+  ],
+  "action": {
+    "default_title": "Cinema Marathon Planner",
+    "default_popup": "src/popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://in.bookmyshow.com/*",
+        "https://*.bookmyshow.com/*",
+        "https://www.district.in/*",
+        "https://district.in/*"
+      ],
+      "js": [
+        "src/core/time.js",
+        "src/core/schedule.js",
+        "src/adapters/generic.js",
+        "src/adapters/bookmyshow.js",
+        "src/adapters/district.js",
+        "src/ui/panel.js",
+        "src/content.js"
+      ],
+      "css": ["src/ui/panel.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["src/ui/panel.css"],
+      "matches": [
+        "https://in.bookmyshow.com/*",
+        "https://*.bookmyshow.com/*",
+        "https://www.district.in/*",
+        "https://district.in/*"
+      ]
+    }
+  ]
+}
