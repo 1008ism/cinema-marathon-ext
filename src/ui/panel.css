@@ -333,29 +333,35 @@
   top: -8px;
   right: -8px;
   background: #7c3aed;
-  color: #fff;
+  color: transparent;
+  font-size: 0;
+  line-height: 0;
   width: 18px;
   height: 18px;
   border-radius: 50%;
   z-index: 2;
   pointer-events: none;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
-/* Movie-row selection tick: sit in the white gutter LEFT of the poster,
-   never on the poster (which stays a site hyperlink). */
+/* Movie-row selection tick: in-flow to the LEFT of the poster column
+   (flex sibling of the poster <a>, not overlaid on the image). */
 .cmp-movie-row-host {
-  position: relative !important;
-  padding-left: 44px !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-start !important;
   box-sizing: border-box;
 }
 
 .cmp-movie-tick {
-  position: absolute;
-  left: 10px;
-  top: 22px;
+  position: relative;
+  flex: 0 0 24px;
+  left: auto;
+  top: auto;
   width: 24px;
   height: 24px;
+  margin: 8px 10px 0 0;
   padding: 0;
   margin: 0;
   border: none;

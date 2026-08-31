@@ -117,18 +117,19 @@
   }
 
   /**
-   * Place a checkmark button as a direct child of the movie row (not inside
-   * the poster <a>), in padding we add to the left of the poster.
+   * Place a checkmark button beside the poster column (not inside the
+   * poster <a>). Extra padding on that column is the white gutter.
    */
   function placeMovieTick(row) {
     if (!row || !row.isConnected) return null;
-    const poster =
-      row.querySelector("[class*='col1'] img") || row.querySelector("img");
+    const col1 = row.querySelector("[class*='col1']");
+    const host = col1 || row;
+    const poster = host.querySelector("img") || row.querySelector("img");
     const posterLink =
       (poster && poster.closest && poster.closest("a")) ||
-      row.querySelector("[class*='col1'] a[href*='movie']");
+      host.querySelector("a[href*='movie']");
 
-    row.classList.add("cmp-movie-row-host");
+    host.classList.add("cmp-movie-row-host");
     const tick = document.createElement("button");
     tick.type = "button";
     tick.className = "cmp-movie-tick";
@@ -139,11 +140,9 @@
       e.stopPropagation();
     });
 
-    if (posterLink && posterLink.parentNode === row) {
-      row.insertBefore(tick, posterLink);
-    } else {
-      row.insertBefore(tick, row.firstChild);
-    }
+    const before =
+      posterLink && posterLink.parentNode === host ? posterLink : host.firstChild;
+    host.insertBefore(tick, before);
     return tick;
   }
 

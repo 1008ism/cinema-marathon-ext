@@ -364,9 +364,13 @@
       const row = distFix.querySelector('[class*="movieSessions"]');
       assert("tick exists", !!tick);
       assert("tick is not inside poster link", tick && !posterLink.contains(tick));
-      assert("tick is a child of the movie row", tick && tick.parentNode === row);
+      const col1 = distFix.querySelector('[class*="col1"]');
+      assert(
+        "tick is a child of the poster column, not the poster link",
+        tick && tick.parentNode === col1
+      );
       assert("poster link remains", !!posterLink && posterLink.querySelector("img"));
-      assert("row marked as tick host", row.classList.contains("cmp-movie-row-host"));
+      assert("poster column marked as tick host", col1.classList.contains("cmp-movie-row-host"));
 
       const lifted = CinemaAdapterDistrict.preferTimeblock(chips[0].querySelector("div"));
       assert("preferTimeblock lifts to li.timeblock", lifted === chips[0]);
