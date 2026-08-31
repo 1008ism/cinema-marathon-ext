@@ -116,33 +116,63 @@
     return null;
   }
 
+  const TICK_SIZE = 28;
+  const TICK_GAP = 10;
+  const TICK_LAYER_ID = "cmp-movie-ticks";
+
+  function getTickLayer() {
+    let layer = document.getElementById(TICK_LAYER_ID);
+    if (!layer) {
+      layer = document.createElement("div");
+      layer.id = TICK_LAYER_ID;
+      document.documentElement.appendChild(layer);
+    }
+    return layer;
+  }
+
+  function layoutMovieTick(tick) {
+    const row = tick && tick._cmpRow;
+    if (!tick || !row || !row.isConnected) return;
+    const rect = row.getBoundingClientRect();
+    // Sit fully in the page gutter: right edge of the tick is TICK_GAP
+    // left of the grey card. Never insert into District flex/grid.
+    tick.style.width = TICK_SIZE + "px";
+    tick.style.height = TICK_SIZE + "px";
+    tick.style.left = rect.left - TICK_SIZE - TICK_GAP + "px";
+    tick.style.top = rect.top + 18 + "px";
+  }
+
+  function layoutAllMovieTicks() {
+    document.querySelectorAll("#" + TICK_LAYER_ID + " .cmp-movie-tick").forEach(layoutMovieTick);
+  }
+
+  let tickLayoutBound = false;
+  function ensureTickLayoutListener() {
+    if (tickLayoutBound) return;
+    tickLayoutBound = true;
+    document.addEventListener("scroll", layoutAllMovieTicks, true);
+    window.addEventListener("resize", layoutAllMovieTicks);
+  }
+
   /**
-   * Place a checkmark button beside the poster column (not inside the
-   * poster <a>). Extra padding on that column is the white gutter.
+   * Tick lives on a document overlay, not in the movie card. District’s
+   * grey card (poster + title + showtimes) stays pixel-identical.
    */
   function placeMovieTick(row) {
     if (!row || !row.isConnected) return null;
-    const col1 = row.querySelector("[class*='col1']");
-    const host = col1 || row;
-    const poster = host.querySelector("img") || row.querySelector("img");
-    const posterLink =
-      (poster && poster.closest && poster.closest("a")) ||
-      host.querySelector("a[href*='movie']");
-
-    host.classList.add("cmp-movie-row-host");
     const tick = document.createElement("button");
     tick.type = "button";
     tick.className = "cmp-movie-tick";
     tick.setAttribute("aria-label", "Selected for marathon");
     tick.innerHTML = TICK_SVG;
+    tick._cmpRow = row;
     tick.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
     });
-
-    const before =
-      posterLink && posterLink.parentNode === host ? posterLink : host.firstChild;
-    host.insertBefore(tick, before);
+    getTickLayer().appendChild(tick);
+    ensureTickLayoutListener();
+    layoutMovieTick(tick);
     return tick;
   }
 
@@ -227,9 +257,10 @@
         if (tick && tick.parentNode) tick.parentNode.removeChild(tick);
       });
       movieTicks = [];
-      document.querySelectorAll(".cmp-movie-row-host").forEach((row) => {
-        row.classList.remove("cmp-movie-row-host");
-      });
+      const layer = document.getElementById(TICK_LAYER_ID);
+      if (layer && !layer.querySelector(".cmp-movie-tick") && layer.parentNode) {
+        layer.parentNode.removeChild(layer);
+      }
     }
 
     function highlightPath(path) {
@@ -254,6 +285,7 @@
           /* ignore */
         }
       }
+      requestAnimationFrame(layoutAllMovieTicks);
     }
 
     function syncMovieTicks(path) {
@@ -614,5 +646,7 @@
     resolveShowChip,
     findMovieRow,
     placeMovieTick,
+    layoutMovieTick,
+    layoutAllMovieTicks,
   };
 })(typeof globalThis !== "undefined" ? globalThis : window);
