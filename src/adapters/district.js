@@ -53,8 +53,9 @@
           CinemaTime.parseClock(textOf(c))
         );
         if (childHasTime) return;
+        if (el.closest && el.closest("[class*='movieDetailsDiv']")) return;
         timesFound += 1;
-        localRows.push(el);
+        localRows.push(preferTimeblock(el));
       });
 
       if (timesFound === 0 || timesFound > 30) return;
@@ -99,6 +100,15 @@
     return null;
   }
 
+  function preferTimeblock(el) {
+    if (!el || el.nodeType !== 1) return el;
+    const block = el.closest && el.closest('[class*="timeblock"]');
+    if (block && !(block.closest && block.closest("[class*='movieDetailsDiv']"))) {
+      return block;
+    }
+    return el;
+  }
+
   function scrape() {
     if (!isDistrict()) return null;
 
@@ -125,5 +135,6 @@
   global.CinemaAdapterDistrict = {
     isDistrict,
     scrape,
+    preferTimeblock,
   };
 })(typeof globalThis !== "undefined" ? globalThis : window);

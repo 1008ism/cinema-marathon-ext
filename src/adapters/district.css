@@ -1,0 +1,21 @@
+/**
+ * District cinema pages — hide language/format filter pills.
+ * Native markup (CSS module hashes change): MDPFilterPills filterPill /
+ * filterPillsScroll. Do not hide the cinema logo, favorite heart, or the
+ * primary "Filters" control.
+ */
+
+[class*="MDPFilterPills-module"][class*="filterPillsScroll"] {
+  display: none !important;
+}
+
+[class*="MDPFilterPills-module"][class*="filterPill"]:not([class*="primaryFilterPill"]) {
+  display: none !important;
+}
+
+/* Extra-defensive: format/language chips if District ever renders them
+   inside the cinema header between logo and heart. */
+[class*="CinemaHeader-module"] [class*="filterPill"]:not([class*="primaryFilterPill"]),
+[class*="CinemaHeader-module"] [class*="filterPillsScroll"] {
+  display: none !important;
+}

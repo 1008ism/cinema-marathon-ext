@@ -43,6 +43,14 @@
       ],
       "css": ["src/ui/panel.css"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.district.in/*",
+        "https://district.in/*"
+      ],
+      "css": ["src/adapters/district.css"],
+      "run_at": "document_start"
     }
   ],
   "web_accessible_resources": [

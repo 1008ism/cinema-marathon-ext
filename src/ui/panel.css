@@ -311,7 +311,10 @@
   word-break: break-word;
 }
 
-/* Highlight on host page showtimes */
+/* Highlight on host page showtimes — only the chosen marathon path.
+   Badge is a plain circle with no digit (not 1, 2, 3, …). Stop order lives
+   in the scheduler / panel list only. Never use host attributes such as
+   District data-time-selection. */
 .cmp-highlight-show {
   outline: 2px solid #a855f7 !important;
   outline-offset: 2px !important;
@@ -321,21 +324,55 @@
 }
 
 .cmp-highlight-show::after {
-  content: attr(data-cmp-step);
+  content: none;
+}
+
+.cmp-highlight-show::before {
+  content: "";
   position: absolute;
   top: -8px;
   right: -8px;
   background: #7c3aed;
   color: #fff;
-  font-size: 10px;
-  font-weight: 700;
-  font-family: system-ui, sans-serif;
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   z-index: 2;
   pointer-events: none;
+  box-sizing: border-box;
+}
+
+/* Movie-row selection tick: sit in the white gutter LEFT of the poster,
+   never on the poster (which stays a site hyperlink). */
+.cmp-movie-row-host {
+  position: relative !important;
+  padding-left: 44px !important;
+  box-sizing: border-box;
+}
+
+.cmp-movie-tick {
+  position: absolute;
+  left: 10px;
+  top: 22px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 50%;
+  background: #7c3aed;
+  color: #fff;
+  cursor: default;
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 2px #fff, 0 2px 8px rgba(109, 40, 217, 0.4);
+  pointer-events: auto;
+}
+
+.cmp-movie-tick svg {
+  width: 14px;
+  height: 14px;
+  display: block;
 }

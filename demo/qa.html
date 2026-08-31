@@ -65,6 +65,8 @@
     <script src="../src/core/time.js"></script>
     <script src="../src/core/schedule.js"></script>
     <script src="../src/adapters/generic.js"></script>
+    <script src="../src/adapters/district.js"></script>
+    <script src="../src/ui/panel.js"></script>
     <script>
       const results = [];
       function assert(name, cond, detail) {
@@ -285,6 +287,89 @@
         guessedRun.maxCount !== demoRun.maxCount || true,
         "real=" + demoRun.maxCount + " estimated=" + guessedRun.maxCount
       );
+
+      // --- overlay: District-like movie row (poster link + timeblocks) ---
+      const distFix = document.createElement("div");
+      distFix.innerHTML = `
+        <header class="CinemaHeader-module-scss-module__P84l1q__header">
+          <div class="CinemaHeader-module-scss-module__P84l1q__logo"><img alt="logo" /></div>
+          <div class="CinemaHeader-module-scss-module__P84l1q__desktopHeart">
+            <div class="Heart-module-scss-module__CtTt_q__favOff" aria-label="Like"></div>
+          </div>
+        </header>
+        <ul class="MDPFilterPills-module-scss-module__TEaxXW__footerFiltersWrap">
+          <li class="MDPFilterPills-module-scss-module__TEaxXW__primaryFilterPill">Filters</li>
+          <div class="MDPFilterPills-module-scss-module__TEaxXW__filterPillsScroll">
+            <li id="Hindi" class="MDPFilterPills-module-scss-module__TEaxXW__filterPill">Hindi</li>
+            <li id="INSIGNIA" class="MDPFilterPills-module-scss-module__TEaxXW__filterPill">INSIGNIA</li>
+          </div>
+        </ul>
+        <li class="MovieSessionsListing-module-scss-module__4rcn9q__movieSessions MovieSessionsListing-module-scss-module__4rcn9q__cdpSessions">
+          <div class="MovieSessionsListing-module-scss-module__4rcn9q__col1">
+            <a href="/movies/hanuman-ansh-movie-tickets-in-mumbai-MV225612">
+              <div class="MovieSessionsListing-module-scss-module__4rcn9q__movieDetailsDiv">
+                <img width="64" height="84" alt="Hanuman Ansh" />
+                <div class="MovieSessionsListing-module-scss-module__4rcn9q__movieDetailsDivHeading">Hanuman Ansh</div>
+              </div>
+            </a>
+          </div>
+          <ul class="MovieSessionsListing-module-scss-module__4rcn9q__col2">
+            <li class="MovieSessionsListing-module-scss-module__4rcn9q__timeblock" data-time-selection="1" role="button">
+              <div class="MovieSessionsListing-module-scss-module__4rcn9q__time">11:00 AM</div>
+            </li>
+            <li class="MovieSessionsListing-module-scss-module__4rcn9q__timeblock" data-time-selection="1" role="button">
+              <div class="MovieSessionsListing-module-scss-module__4rcn9q__time">02:15 PM</div>
+            </li>
+            <li class="MovieSessionsListing-module-scss-module__4rcn9q__timeblock" data-time-selection="1" role="button">
+              <div class="MovieSessionsListing-module-scss-module__4rcn9q__time">06:30 PM</div>
+            </li>
+          </ul>
+        </li>
+      `;
+      document.body.appendChild(distFix);
+
+      const chips = distFix.querySelectorAll('[class*="timeblock"]');
+      const path = [
+        { title: "Hanuman Ansh", startText: "11:00 AM", el: chips[0] },
+        { title: "Hanuman Ansh", startText: "06:30 PM", el: chips[2] },
+      ];
+      const panel = CinemaPanel.createPanelController();
+      panel.mount();
+      panel.highlightPath(path);
+
+      const highlighted = distFix.querySelectorAll(".cmp-highlight-show");
+      assert("only path chips highlighted", highlighted.length === 2, highlighted.length);
+      assert(
+        "first stop has no digit attr",
+        !chips[0].hasAttribute("data-cmp-step")
+      );
+      assert(
+        "later stop also has no digit on the chip",
+        chips[2].classList.contains("cmp-highlight-show") &&
+          !chips[2].hasAttribute("data-cmp-step")
+      );
+      assert(
+        "unselected chip not labeled 1",
+        !chips[1].classList.contains("cmp-highlight-show") &&
+          !chips[1].hasAttribute("data-cmp-step")
+      );
+      assert(
+        "native data-time-selection not used as step",
+        chips[0].getAttribute("data-time-selection") === "1" &&
+          !chips[0].hasAttribute("data-cmp-step")
+      );
+
+      const tick = distFix.querySelector(".cmp-movie-tick");
+      const posterLink = distFix.querySelector("a[href*='hanuman-ansh']");
+      const row = distFix.querySelector('[class*="movieSessions"]');
+      assert("tick exists", !!tick);
+      assert("tick is not inside poster link", tick && !posterLink.contains(tick));
+      assert("tick is a child of the movie row", tick && tick.parentNode === row);
+      assert("poster link remains", !!posterLink && posterLink.querySelector("img"));
+      assert("row marked as tick host", row.classList.contains("cmp-movie-row-host"));
+
+      const lifted = CinemaAdapterDistrict.preferTimeblock(chips[0].querySelector("div"));
+      assert("preferTimeblock lifts to li.timeblock", lifted === chips[0]);
 
       const failed = results.filter((r) => !r.ok);
       const payload = {
