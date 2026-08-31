@@ -25,6 +25,12 @@
         display: block;
         background: #d4d4d8;
       }
+      .qa-page .MovieSessionsListing-module-scss-module__4rcn9q__timeblock {
+        display: inline-block;
+        min-width: 72px;
+        min-height: 32px;
+        list-style: none;
+      }
       .qa-bms article.movie {
         background: #fff;
         margin: 8px 16px;
@@ -95,6 +101,7 @@
     <script src="../src/adapters/generic.js"></script>
     <script src="../src/adapters/district.js"></script>
     <script src="../src/ui/panel.js"></script>
+    <script src="../src/ui/pageOverlay.js"></script>
     <script>
       const results = [];
       function assert(name, cond, detail) {
@@ -344,20 +351,29 @@
           </div>
           <ul class="MovieSessionsListing-module-scss-module__4rcn9q__col2">
             <li class="MovieSessionsListing-module-scss-module__4rcn9q__timeblock" data-time-selection="1" role="button">
-              <div class="MovieSessionsListing-module-scss-module__4rcn9q__time">11:00 AM</div>
+              <div class="MovieSessionsListing-module-scss-module__4rcn9q__timeblock__sessionInfo">
+                <div class="MovieSessionsListing-module-scss-module__4rcn9q__time">11:00 AM</div>
+                <div class="MovieSessionsListing-module-scss-module__4rcn9q__timeblock__subtitle">Hindi</div>
+              </div>
             </li>
             <li class="MovieSessionsListing-module-scss-module__4rcn9q__timeblock" data-time-selection="1" role="button">
-              <div class="MovieSessionsListing-module-scss-module__4rcn9q__time">02:15 PM</div>
+              <div class="MovieSessionsListing-module-scss-module__4rcn9q__timeblock__sessionInfo">
+                <div class="MovieSessionsListing-module-scss-module__4rcn9q__time">02:15 PM</div>
+                <div class="MovieSessionsListing-module-scss-module__4rcn9q__timeblock__subtitle">Hindi</div>
+              </div>
             </li>
             <li class="MovieSessionsListing-module-scss-module__4rcn9q__timeblock" data-time-selection="1" role="button">
-              <div class="MovieSessionsListing-module-scss-module__4rcn9q__time">06:30 PM</div>
+              <div class="MovieSessionsListing-module-scss-module__4rcn9q__timeblock__sessionInfo">
+                <div class="MovieSessionsListing-module-scss-module__4rcn9q__time">06:30 PM</div>
+                <div class="MovieSessionsListing-module-scss-module__4rcn9q__timeblock__subtitle">Hindi</div>
+              </div>
             </li>
           </ul>
         </li>
       `;
       document.body.appendChild(distFix);
 
-      const chips = distFix.querySelectorAll('[class*="timeblock"]');
+      const chips = distFix.querySelectorAll('li[class*="timeblock"]');
       const path = [
         { title: "Hanuman Ansh", startText: "11:00 AM", el: chips[0] },
         { title: "Hanuman Ansh", startText: "06:30 PM", el: chips[2] },
@@ -470,6 +486,46 @@
 
       const lifted = CinemaAdapterDistrict.preferTimeblock(chips[0].querySelector("div"));
       assert("preferTimeblock lifts to li.timeblock", lifted === chips[0]);
+
+      assert("hasHighlights exists", typeof panel.hasHighlights === "function");
+      const sessionInfo = distFix.querySelector('[class*="timeblock__sessionInfo"]');
+      const subtitle = distFix.querySelector('[class*="timeblock__subtitle"]');
+      assert(
+        "preferTimeblock from sessionInfo is li.timeblock",
+        CinemaAdapterDistrict.preferTimeblock(sessionInfo) === chips[0]
+      );
+      assert(
+        "preferTimeblock from subtitle is li.timeblock",
+        CinemaAdapterDistrict.preferTimeblock(subtitle) === chips[0]
+      );
+      const fromSubtitle = CinemaPanel.resolveShowChip({
+        title: "Hanuman Ansh",
+        startText: "11:00 AM",
+        el: subtitle,
+      });
+      assert("resolveShowChip from subtitle is li.timeblock", fromSubtitle === chips[0]);
+
+      const fixtureScrape = CinemaAdapterGeneric.scrape(distFix);
+      assert(
+        "generic scrape of district fixture finds shows",
+        fixtureScrape.rows.length >= 3,
+        fixtureScrape.rows.length
+      );
+      const fixtureRun = CinemaSchedule.findMaxMarathon(
+        CinemaSchedule.normalizeScreenings(fixtureScrape.rows, day),
+        { bufferMinutes: 15 }
+      );
+      assert(
+        "generic scrape of fixture yields a path",
+        fixtureRun.path.length >= 1,
+        fixtureRun.maxCount
+      );
+
+      panel.highlightPath(path, { scroll: false });
+      assert("hasHighlights after paint", panel.hasHighlights() === true);
+      if (typeof CinemaPageOverlay !== "undefined") {
+        CinemaPageOverlay.sync(fixtureRun);
+      }
 
       const t0 = Date.now();
       panel.setState({

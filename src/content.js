@@ -146,6 +146,14 @@
       message,
     });
 
+    const path = (result && result.path) || [];
+    if (panel.hasHighlights() || path.length) {
+      panel.highlightPath(path, { scroll: false });
+    }
+    if (typeof CinemaPageOverlay !== "undefined" && typeof CinemaPageOverlay.sync === "function") {
+      CinemaPageOverlay.sync(result);
+    }
+
     return { scrape, screenings, result };
   }
 
@@ -183,7 +191,17 @@
           allowRewatch: state.allowRewatch,
         }
       );
-      panel.setState({ result });
+          panel.setState({ result });
+          const path = (result && result.path) || [];
+          if (panel.hasHighlights() || path.length) {
+            panel.highlightPath(path, { scroll: false });
+          }
+          if (
+            typeof CinemaPageOverlay !== "undefined" &&
+            typeof CinemaPageOverlay.sync === "function"
+          ) {
+            CinemaPageOverlay.sync(result);
+          }
     }
   });
 
@@ -221,21 +239,22 @@
     /* ignore */
   }
 
-  // DOM mutations (lazy-loaded showtimes) — ignore our own panel
+  function isOurUi(node) {
+    if (!node) return false;
+    if (node.id === "cmp-root" || node.id === "cmp-movie-ticks") return true;
+    if (node.nodeType === 1 && node.closest) {
+      if (node.closest("#cmp-root, #cmp-movie-ticks")) return true;
+    }
+    return false;
+  }
+
+  // DOM mutations (lazy-loaded showtimes) — ignore our own panel / tick layer
   const observer = new MutationObserver((mutations) => {
     const relevant = mutations.some((m) => {
       const t = m.target;
-      if (t && t.closest && t.closest("#cmp-root")) return false;
+      if (isOurUi(t)) return false;
       const nodes = [...m.addedNodes, ...m.removedNodes];
-      if (
-        nodes.some(
-          (n) =>
-            n.id === "cmp-root" ||
-            (n.nodeType === 1 && n.closest && n.closest("#cmp-root"))
-        )
-      ) {
-        return false;
-      }
+      if (nodes.some((n) => isOurUi(n))) return false;
       return true;
     });
     if (relevant) scheduleRecompute();

@@ -53,7 +53,6 @@
           CinemaTime.parseClock(textOf(c))
         );
         if (childHasTime) return;
-        if (el.closest && el.closest("[class*='movieDetailsDiv']")) return;
         timesFound += 1;
         localRows.push(preferTimeblock(el));
       });
@@ -102,11 +101,7 @@
 
   function preferTimeblock(el) {
     if (!el || el.nodeType !== 1) return el;
-    const block = el.closest && el.closest('[class*="timeblock"]');
-    if (block && !(block.closest && block.closest("[class*='movieDetailsDiv']"))) {
-      return block;
-    }
-    return el;
+    return (el.closest && el.closest('li[class*="timeblock"]')) || el;
   }
 
   function scrape() {

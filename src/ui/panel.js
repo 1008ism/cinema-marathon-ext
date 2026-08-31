@@ -21,7 +21,7 @@
       el = findChipInRow(findMovieRow(screening), screening) || el;
     }
 
-    const timeblock = el.closest && el.closest('[class*="timeblock"]');
+    const timeblock = el.closest && el.closest('li[class*="timeblock"]');
     if (timeblock && !isMovieRow(timeblock)) {
       return timeblock;
     }
@@ -41,10 +41,16 @@
 
   function isPosterOrTitleLink(el) {
     if (!el || el.nodeType !== 1) return false;
+    if (el.closest && el.closest('li[class*="timeblock"]')) return false;
     if (el.tagName === "IMG") return true;
-    if (el.closest && el.closest("[class*='movieDetailsDiv']")) return true;
-    if (el.closest && el.closest("[class*='col1']") && el.tagName === "A") {
-      return true;
+    if (el.tagName === "A") {
+      const href = el.getAttribute("href") || "";
+      if (/seat-layout/i.test(href)) return false;
+      // col1 poster: <a href="…movie-tickets…"><img>…</a>
+      // Still a poster if hydration stuffed timeblocks inside the same <a>.
+      if (el.querySelector("img") && /movie-tickets|\/movies\//i.test(href)) {
+        return true;
+      }
     }
     return false;
   }
@@ -76,13 +82,13 @@
     if (!row) return null;
     const want = screeningClockKey(screening);
     const nodes = row.querySelectorAll(
-      '[class*="timeblock"], [class*="showtime"], button, a, [role="button"]'
+      'li[class*="timeblock"], [class*="showtime"], button, a, [role="button"]'
     );
     for (const node of nodes) {
       if (isPosterOrTitleLink(node)) continue;
       const t = (node.innerText || node.textContent || "").replace(/\s+/g, " ");
       if (want && clockKey(t) === want) {
-        return (node.closest && node.closest('[class*="timeblock"]')) || node;
+        return (node.closest && node.closest('li[class*="timeblock"]')) || node;
       }
     }
     return null;
@@ -263,7 +269,11 @@
       }
     }
 
-    function highlightPath(path) {
+    function hasHighlights() {
+      return highlighted.length > 0;
+    }
+
+    function highlightPath(path, opts) {
       clearHighlights();
       (path || []).forEach((s, i) => {
         const el = resolveShowChip(s);
@@ -278,7 +288,9 @@
       });
       syncMovieTicks(path);
       const firstChip = highlighted[0];
-      if (firstChip && firstChip.scrollIntoView) {
+      if (opts && opts.scroll === false) {
+        /* rescan / overlay paint — do not jump the listing */
+      } else if (firstChip && firstChip.scrollIntoView) {
         try {
           firstChip.scrollIntoView({ behavior: "smooth", block: "center" });
         } catch (_) {
@@ -600,6 +612,7 @@
       setOnChange,
       setRefreshHandler,
       highlightPath,
+      hasHighlights,
       clearHighlights,
       destroy,
       render,

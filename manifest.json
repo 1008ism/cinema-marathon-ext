@@ -39,6 +39,7 @@
         "src/adapters/bookmyshow.js",
         "src/adapters/district.js",
         "src/ui/panel.js",
+        "src/ui/pageOverlay.js",
         "src/content.js"
       ],
       "css": ["src/ui/panel.css"],
