@@ -54,7 +54,7 @@
       if (!section) break;
 
       const headings = section.querySelectorAll(
-        "h1, h2, h3, h4, [data-title], [class*='movie-name' i], [class*='moviename' i]"
+        "h1, h2, h3, h4, [data-title], [class*='movie-name' i], [class*='moviename' i], [class*='movieDetailsDivHeading']"
       );
       for (const heading of headings) {
         const t = textOf(heading);

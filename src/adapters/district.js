@@ -54,7 +54,7 @@
         );
         if (childHasTime) return;
         timesFound += 1;
-        localRows.push(el);
+        localRows.push(preferTimeblock(el));
       });
 
       if (timesFound === 0 || timesFound > 30) return;
@@ -99,6 +99,11 @@
     return null;
   }
 
+  function preferTimeblock(el) {
+    if (!el || el.nodeType !== 1) return el;
+    return (el.closest && el.closest('li[class*="timeblock"]')) || el;
+  }
+
   function scrape() {
     if (!isDistrict()) return null;
 
@@ -125,5 +130,6 @@
   global.CinemaAdapterDistrict = {
     isDistrict,
     scrape,
+    preferTimeblock,
   };
 })(typeof globalThis !== "undefined" ? globalThis : window);

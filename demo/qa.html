@@ -3,6 +3,40 @@
   <head>
     <meta charset="UTF-8" />
     <title>Cinema Marathon QA</title>
+    <link rel="stylesheet" href="../src/ui/panel.css" />
+    <link rel="stylesheet" href="../src/adapters/district.css" />
+    <style>
+      .qa-page {
+        background: #e8e8ed;
+        padding: 0;
+        width: 720px;
+      }
+      .qa-page .MovieSessionsListing-module-scss-module__4rcn9q__movieSessions {
+        background: #fff;
+        border-radius: 16px;
+        margin: 8px 16px;
+        padding: 20px 16px;
+        list-style: none;
+        box-shadow: 0 1px 3px #0000000a, 0 4px 12px #0000000a;
+      }
+      .qa-page .MovieSessionsListing-module-scss-module__4rcn9q__col1 img {
+        width: 64px;
+        height: 84px;
+        display: block;
+        background: #d4d4d8;
+      }
+      .qa-page .MovieSessionsListing-module-scss-module__4rcn9q__timeblock {
+        display: inline-block;
+        min-width: 72px;
+        min-height: 32px;
+        list-style: none;
+      }
+      .qa-bms article.movie {
+        background: #fff;
+        margin: 8px 16px;
+        padding: 16px;
+      }
+    </style>
   </head>
   <body>
     <h1>QA</h1>
@@ -65,6 +99,9 @@
     <script src="../src/core/time.js"></script>
     <script src="../src/core/schedule.js"></script>
     <script src="../src/adapters/generic.js"></script>
+    <script src="../src/adapters/district.js"></script>
+    <script src="../src/ui/panel.js"></script>
+    <script src="../src/ui/pageOverlay.js"></script>
     <script>
       const results = [];
       function assert(name, cond, detail) {
@@ -284,6 +321,277 @@
         "estimated 150m can change max vs real runtimes",
         guessedRun.maxCount !== demoRun.maxCount || true,
         "real=" + demoRun.maxCount + " estimated=" + guessedRun.maxCount
+      );
+
+      // --- overlay: District-like movie row (poster link + timeblocks) ---
+      const distFix = document.createElement("div");
+      distFix.className = "qa-page";
+      distFix.innerHTML = `
+        <header class="CinemaHeader-module-scss-module__P84l1q__header">
+          <div class="CinemaHeader-module-scss-module__P84l1q__logo"><img alt="logo" /></div>
+          <div class="CinemaHeader-module-scss-module__P84l1q__desktopHeart">
+            <div class="Heart-module-scss-module__CtTt_q__favOff" aria-label="Like"></div>
+          </div>
+        </header>
+        <ul class="MDPFilterPills-module-scss-module__TEaxXW__footerFiltersWrap">
+          <li class="MDPFilterPills-module-scss-module__TEaxXW__primaryFilterPill">Filters</li>
+          <div class="MDPFilterPills-module-scss-module__TEaxXW__filterPillsScroll">
+            <li id="Hindi" class="MDPFilterPills-module-scss-module__TEaxXW__filterPill">Hindi</li>
+            <li id="INSIGNIA" class="MDPFilterPills-module-scss-module__TEaxXW__filterPill">INSIGNIA</li>
+          </div>
+        </ul>
+        <li class="MovieSessionsListing-module-scss-module__4rcn9q__movieSessions MovieSessionsListing-module-scss-module__4rcn9q__cdpSessions">
+          <div class="MovieSessionsListing-module-scss-module__4rcn9q__col1">
+            <a href="/movies/hanuman-ansh-movie-tickets-in-mumbai-MV225612">
+              <div class="MovieSessionsListing-module-scss-module__4rcn9q__movieDetailsDiv">
+                <img width="64" height="84" alt="Hanuman Ansh" />
+                <div class="MovieSessionsListing-module-scss-module__4rcn9q__movieDetailsDivHeading">Hanuman Ansh</div>
+              </div>
+            </a>
+          </div>
+          <ul class="MovieSessionsListing-module-scss-module__4rcn9q__col2">
+            <li class="MovieSessionsListing-module-scss-module__4rcn9q__timeblock" data-time-selection="1" role="button">
+              <div class="MovieSessionsListing-module-scss-module__4rcn9q__timeblock__sessionInfo">
+                <div class="MovieSessionsListing-module-scss-module__4rcn9q__time">11:00 AM</div>
+                <div class="MovieSessionsListing-module-scss-module__4rcn9q__timeblock__subtitle">Hindi</div>
+              </div>
+            </li>
+            <li class="MovieSessionsListing-module-scss-module__4rcn9q__timeblock" data-time-selection="1" role="button">
+              <div class="MovieSessionsListing-module-scss-module__4rcn9q__timeblock__sessionInfo">
+                <div class="MovieSessionsListing-module-scss-module__4rcn9q__time">02:15 PM</div>
+                <div class="MovieSessionsListing-module-scss-module__4rcn9q__timeblock__subtitle">Hindi</div>
+              </div>
+            </li>
+            <li class="MovieSessionsListing-module-scss-module__4rcn9q__timeblock" data-time-selection="1" role="button">
+              <div class="MovieSessionsListing-module-scss-module__4rcn9q__timeblock__sessionInfo">
+                <div class="MovieSessionsListing-module-scss-module__4rcn9q__time">06:30 PM</div>
+                <div class="MovieSessionsListing-module-scss-module__4rcn9q__timeblock__subtitle">Hindi</div>
+              </div>
+            </li>
+          </ul>
+        </li>
+      `;
+      document.body.appendChild(distFix);
+
+      const chips = distFix.querySelectorAll('li[class*="timeblock"]');
+      const path = [
+        { title: "Hanuman Ansh", startText: "11:00 AM", el: chips[0] },
+        { title: "Hanuman Ansh", startText: "06:30 PM", el: chips[2] },
+      ];
+      const posterLink = distFix.querySelector("a[href*='hanuman-ansh']");
+      const row = distFix.querySelector('[class*="movieSessions"]');
+      const col1 = distFix.querySelector('[class*="col1"]');
+      const poster = posterLink.querySelector("img");
+      const cardBefore = row.getBoundingClientRect();
+      const posterBefore = poster.getBoundingClientRect();
+      const col1Before = col1.getBoundingClientRect();
+      const rowClassBefore = row.className;
+      const col1ClassBefore = col1.className;
+      const posterLeftInCard = posterBefore.left - cardBefore.left;
+
+      const panel = CinemaPanel.createPanelController();
+      panel.mount();
+      panel.highlightPath(path);
+      CinemaPanel.layoutAllMovieTicks();
+
+      const highlighted = distFix.querySelectorAll(".cmp-highlight-show");
+      assert("only path chips highlighted", highlighted.length === 2, highlighted.length);
+      assert(
+        "first stop has no digit attr",
+        !chips[0].hasAttribute("data-cmp-step")
+      );
+      assert(
+        "later stop also has no digit on the chip",
+        chips[2].classList.contains("cmp-highlight-show") &&
+          !chips[2].hasAttribute("data-cmp-step")
+      );
+      assert(
+        "unselected chip not labeled 1",
+        !chips[1].classList.contains("cmp-highlight-show") &&
+          !chips[1].hasAttribute("data-cmp-step")
+      );
+      assert(
+        "native data-time-selection not used as step",
+        chips[0].getAttribute("data-time-selection") === "1" &&
+          !chips[0].hasAttribute("data-cmp-step")
+      );
+
+      const tick = document.querySelector("#cmp-movie-ticks .cmp-movie-tick");
+      assert("tick exists", !!tick);
+      assert("tick is not inside poster link", tick && !posterLink.contains(tick));
+      assert("tick is not inside the grey card", tick && !row.contains(tick));
+      assert("tick is not inside col1", tick && !col1.contains(tick));
+      assert("poster link remains", !!posterLink && posterLink.querySelector("img"));
+      assert("col1 not used as tick host", !col1.className.includes("cmp-movie-row-host"));
+      assert("row class unchanged", row.className === rowClassBefore);
+      assert("col1 class unchanged", col1.className === col1ClassBefore);
+
+      const cardAfter = row.getBoundingClientRect();
+      const posterAfter = poster.getBoundingClientRect();
+      const col1After = col1.getBoundingClientRect();
+      assert(
+        "card width unchanged",
+        Math.abs(cardAfter.width - cardBefore.width) < 1,
+        cardBefore.width + " -> " + cardAfter.width
+      );
+      assert(
+        "poster size unchanged",
+        Math.abs(posterAfter.width - posterBefore.width) < 1 &&
+          Math.abs(posterAfter.height - posterBefore.height) < 1,
+        posterBefore.width + "x" + posterBefore.height
+      );
+      assert(
+        "poster still in the same place inside the card",
+        Math.abs(posterAfter.left - cardAfter.left - posterLeftInCard) < 1,
+        posterLeftInCard + " vs " + (posterAfter.left - cardAfter.left)
+      );
+      assert(
+        "col1 width unchanged",
+        Math.abs(col1After.width - col1Before.width) < 1,
+        col1Before.width + " -> " + col1After.width
+      );
+
+      const tickBox = tick.getBoundingClientRect();
+      assert("tick is easy to hit", tickBox.width >= 24 && tickBox.height >= 24);
+      assert(
+        "tick is fully left of the grey card",
+        tickBox.right <= cardAfter.left - 4,
+        "tickRight=" + tickBox.right + " cardLeft=" + cardAfter.left
+      );
+      assert(
+        "tick does not overlap poster",
+        tickBox.right <= posterAfter.left,
+        "tickRight=" + tickBox.right + " posterLeft=" + posterAfter.left
+      );
+
+      const logo = distFix.querySelector("[class*='logo']");
+      const heart = distFix.querySelector("[class*='desktopHeart']");
+      const langPill = distFix.querySelector("#Hindi");
+      const formatPill = distFix.querySelector("#INSIGNIA");
+      const filters = distFix.querySelector("[class*='primaryFilterPill']");
+      assert("logo remains", !!logo && getComputedStyle(logo).display !== "none");
+      assert("heart remains", !!heart && getComputedStyle(heart).display !== "none");
+      assert(
+        "language pill hidden",
+        langPill && getComputedStyle(langPill).display === "none"
+      );
+      assert(
+        "format pill hidden",
+        formatPill && getComputedStyle(formatPill).display === "none"
+      );
+      assert(
+        "Filters control remains",
+        filters && getComputedStyle(filters).display !== "none"
+      );
+
+      const lifted = CinemaAdapterDistrict.preferTimeblock(chips[0].querySelector("div"));
+      assert("preferTimeblock lifts to li.timeblock", lifted === chips[0]);
+
+      assert("hasHighlights exists", typeof panel.hasHighlights === "function");
+      const sessionInfo = distFix.querySelector('[class*="timeblock__sessionInfo"]');
+      const subtitle = distFix.querySelector('[class*="timeblock__subtitle"]');
+      assert(
+        "preferTimeblock from sessionInfo is li.timeblock",
+        CinemaAdapterDistrict.preferTimeblock(sessionInfo) === chips[0]
+      );
+      assert(
+        "preferTimeblock from subtitle is li.timeblock",
+        CinemaAdapterDistrict.preferTimeblock(subtitle) === chips[0]
+      );
+      const fromSubtitle = CinemaPanel.resolveShowChip({
+        title: "Hanuman Ansh",
+        startText: "11:00 AM",
+        el: subtitle,
+      });
+      assert("resolveShowChip from subtitle is li.timeblock", fromSubtitle === chips[0]);
+
+      const fixtureScrape = CinemaAdapterGeneric.scrape(distFix);
+      assert(
+        "generic scrape of district fixture finds shows",
+        fixtureScrape.rows.length >= 3,
+        fixtureScrape.rows.length
+      );
+      const fixtureRun = CinemaSchedule.findMaxMarathon(
+        CinemaSchedule.normalizeScreenings(fixtureScrape.rows, day),
+        { bufferMinutes: 15 }
+      );
+      assert(
+        "generic scrape of fixture yields a path",
+        fixtureRun.path.length >= 1,
+        fixtureRun.maxCount
+      );
+
+      panel.highlightPath(path, { scroll: false });
+      assert("hasHighlights after paint", panel.hasHighlights() === true);
+      if (typeof CinemaPageOverlay !== "undefined") {
+        CinemaPageOverlay.sync(fixtureRun);
+      }
+
+      const t0 = Date.now();
+      panel.setState({
+        open: true,
+        result: {
+          maxCount: 2,
+          path: [
+            { title: "Hanuman Ansh", start: t0, end: t0 + 3600000, format: "" },
+            { title: "Next Film", start: t0 + 7200000, end: t0 + 10800000, format: "" },
+          ],
+          gapsMinutes: [15],
+          totalRuntimeMin: 120,
+          spanMinutes: 180,
+          totalCandidates: 3,
+        },
+      });
+      const pathTimes = [...document.querySelectorAll("#cmp-root .cmp-path-time")].map(
+        (el) => el.textContent
+      );
+      assert(
+        "panel still numbers the internal path",
+        pathTimes.length >= 2 &&
+          pathTimes[0].indexOf("#1") !== -1 &&
+          pathTimes[1].indexOf("#2") !== -1,
+        JSON.stringify(pathTimes)
+      );
+
+      const bmsFix = document.createElement("div");
+      bmsFix.className = "qa-bms";
+      bmsFix.innerHTML = `
+        <article class="movie">
+          <a href="/movies/dune"><img width="64" height="84" alt="Dune" /></a>
+          <h2>Dune: Part Two</h2>
+          <div class="times">
+            <button type="button">10:00 AM</button>
+            <button type="button">02:15 PM</button>
+          </div>
+        </article>
+      `;
+      document.body.appendChild(bmsFix);
+      const bmsBtns = bmsFix.querySelectorAll("button");
+      const bmsArticle = bmsFix.querySelector("article");
+      const bmsPoster = bmsFix.querySelector("img");
+      const bmsPosterBefore = bmsPoster.getBoundingClientRect();
+      panel.highlightPath([
+        { title: "Dune: Part Two", startText: "10:00 AM", el: bmsBtns[0] },
+      ]);
+      CinemaPanel.layoutAllMovieTicks();
+      const bmsPosterAfter = bmsPoster.getBoundingClientRect();
+      const bmsTick = document.querySelector("#cmp-movie-ticks .cmp-movie-tick");
+      const bmsCard = bmsArticle.getBoundingClientRect();
+      const bmsTickBox = bmsTick.getBoundingClientRect();
+      assert(
+        "BMS poster size unchanged",
+        Math.abs(bmsPosterAfter.width - bmsPosterBefore.width) < 1
+      );
+      assert("BMS tick outside the card", bmsTick && !bmsArticle.contains(bmsTick));
+      assert(
+        "BMS tick left of card",
+        bmsTickBox.right <= bmsCard.left - 4,
+        "tickRight=" + bmsTickBox.right + " cardLeft=" + bmsCard.left
+      );
+      assert(
+        "BMS selected chip has no digit",
+        bmsBtns[0].classList.contains("cmp-highlight-show") &&
+          !bmsBtns[0].hasAttribute("data-cmp-step")
       );
 
       const failed = results.filter((r) => !r.ok);

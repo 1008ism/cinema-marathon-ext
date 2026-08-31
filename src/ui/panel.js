@@ -4,6 +4,184 @@
 (function (global) {
   const ROOT_ID = "cmp-root";
 
+  const TICK_SVG =
+    '<svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M6.2 11.3 3.4 8.5l1.1-1.1 1.7 1.7 4.3-4.3 1.1 1.1z"/></svg>';
+
+  /**
+   * Bind highlight to a single showtime chip, never a movie poster/row.
+   * District chips are li[class*="timeblock"] (every one also has native
+   * data-time-selection="1" — we do not reuse that for marathon numbering).
+   */
+  function resolveShowChip(screening) {
+    if (!screening) return null;
+    let el = screening.el;
+    if (!el || el.nodeType !== 1 || !el.isConnected) return null;
+
+    if (isPosterOrTitleLink(el)) {
+      el = findChipInRow(findMovieRow(screening), screening) || el;
+    }
+
+    const timeblock = el.closest && el.closest('li[class*="timeblock"]');
+    if (timeblock && !isMovieRow(timeblock)) {
+      return timeblock;
+    }
+
+    if (isMovieRow(el) || isPosterOrTitleLink(el)) {
+      return findChipInRow(findMovieRow(screening), screening);
+    }
+
+    return el;
+  }
+
+  function isMovieRow(el) {
+    if (!el || !el.className) return false;
+    const c = String(el.className);
+    return /movieSessions/i.test(c) || /cdpSessions/i.test(c);
+  }
+
+  function isPosterOrTitleLink(el) {
+    if (!el || el.nodeType !== 1) return false;
+    if (el.closest && el.closest('li[class*="timeblock"]')) return false;
+    if (el.tagName === "IMG") return true;
+    if (el.tagName === "A") {
+      const href = el.getAttribute("href") || "";
+      if (/seat-layout/i.test(href)) return false;
+      // col1 poster: <a href="…movie-tickets…"><img>…</a>
+      // Still a poster if hydration stuffed timeblocks inside the same <a>.
+      if (el.querySelector("img") && /movie-tickets|\/movies\//i.test(href)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function clockKey(text) {
+    const extracted =
+      global.CinemaTime && CinemaTime.extractClockText
+        ? CinemaTime.extractClockText(text)
+        : null;
+    return (extracted || text || "")
+      .replace(/\s+/g, "")
+      .toLowerCase();
+  }
+
+  function screeningClockKey(screening) {
+    if (!screening) return "";
+    if (screening.startText) return clockKey(screening.startText);
+    if (
+      Number.isFinite(screening.start) &&
+      global.CinemaTime &&
+      CinemaTime.formatClock
+    ) {
+      return clockKey(CinemaTime.formatClock(new Date(screening.start)));
+    }
+    return "";
+  }
+
+  function findChipInRow(row, screening) {
+    if (!row) return null;
+    const want = screeningClockKey(screening);
+    const nodes = row.querySelectorAll(
+      'li[class*="timeblock"], [class*="showtime"], button, a, [role="button"]'
+    );
+    for (const node of nodes) {
+      if (isPosterOrTitleLink(node)) continue;
+      const t = (node.innerText || node.textContent || "").replace(/\s+/g, " ");
+      if (want && clockKey(t) === want) {
+        return (node.closest && node.closest('li[class*="timeblock"]')) || node;
+      }
+    }
+    return null;
+  }
+
+  function findMovieRow(screening) {
+    const el = screening && screening.el;
+    if (el && el.nodeType === 1) {
+      const district = el.closest && el.closest('[class*="movieSessions"]');
+      if (district) return district;
+      const article = el.closest && el.closest("article.movie, article");
+      if (article && article.querySelector("img, h2, h3")) return article;
+      const bms = el.closest && el.closest("#venuelist li, [class*='movie-details']");
+      if (bms) return bms;
+    }
+    const title = ((screening && screening.title) || "").trim();
+    if (!title) return null;
+    const headings = document.querySelectorAll(
+      "[class*='movieDetailsDivHeading'], h2, h3, [class*='movie-name' i]"
+    );
+    for (const h of headings) {
+      const ht = (h.textContent || "").replace(/\s+/g, " ").trim();
+      if (ht.toLowerCase() === title.toLowerCase()) {
+        return (
+          (h.closest && h.closest('[class*="movieSessions"]')) ||
+          (h.closest && h.closest("article")) ||
+          h.parentElement
+        );
+      }
+    }
+    return null;
+  }
+
+  const TICK_SIZE = 28;
+  const TICK_GAP = 10;
+  const TICK_LAYER_ID = "cmp-movie-ticks";
+
+  function getTickLayer() {
+    let layer = document.getElementById(TICK_LAYER_ID);
+    if (!layer) {
+      layer = document.createElement("div");
+      layer.id = TICK_LAYER_ID;
+      document.documentElement.appendChild(layer);
+    }
+    return layer;
+  }
+
+  function layoutMovieTick(tick) {
+    const row = tick && tick._cmpRow;
+    if (!tick || !row || !row.isConnected) return;
+    const rect = row.getBoundingClientRect();
+    // Sit fully in the page gutter: right edge of the tick is TICK_GAP
+    // left of the grey card. Never insert into District flex/grid.
+    tick.style.width = TICK_SIZE + "px";
+    tick.style.height = TICK_SIZE + "px";
+    tick.style.left = rect.left - TICK_SIZE - TICK_GAP + "px";
+    tick.style.top = rect.top + 18 + "px";
+  }
+
+  function layoutAllMovieTicks() {
+    document.querySelectorAll("#" + TICK_LAYER_ID + " .cmp-movie-tick").forEach(layoutMovieTick);
+  }
+
+  let tickLayoutBound = false;
+  function ensureTickLayoutListener() {
+    if (tickLayoutBound) return;
+    tickLayoutBound = true;
+    document.addEventListener("scroll", layoutAllMovieTicks, true);
+    window.addEventListener("resize", layoutAllMovieTicks);
+  }
+
+  /**
+   * Tick lives on a document overlay, not in the movie card. District’s
+   * grey card (poster + title + showtimes) stays pixel-identical.
+   */
+  function placeMovieTick(row) {
+    if (!row || !row.isConnected) return null;
+    const tick = document.createElement("button");
+    tick.type = "button";
+    tick.className = "cmp-movie-tick";
+    tick.setAttribute("aria-label", "Selected for marathon");
+    tick.innerHTML = TICK_SVG;
+    tick._cmpRow = row;
+    tick.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+    getTickLayer().appendChild(tick);
+    ensureTickLayoutListener();
+    layoutMovieTick(tick);
+    return tick;
+  }
+
   /**
    * @typedef {Object} PanelState
    * @property {boolean} open
@@ -30,6 +208,7 @@
 
     let root = null;
     let highlighted = [];
+    let movieTicks = [];
     let onChange = null;
 
     function mount() {
@@ -72,28 +251,65 @@
     function clearHighlights() {
       highlighted.forEach((el) => {
         if (!el) return;
-        el.classList.remove("cmp-highlight-show");
-        el.removeAttribute("data-cmp-step");
+        el.classList.remove("cmp-highlight-show", "cmp-highlight-first");
+        el.removeAttribute("data-cmp-step"); // leftover from older numbered badges
       });
       highlighted = [];
+      clearMovieTicks();
     }
 
-    function highlightPath(path) {
+    function clearMovieTicks() {
+      movieTicks.forEach((tick) => {
+        if (tick && tick.parentNode) tick.parentNode.removeChild(tick);
+      });
+      movieTicks = [];
+      const layer = document.getElementById(TICK_LAYER_ID);
+      if (layer && !layer.querySelector(".cmp-movie-tick") && layer.parentNode) {
+        layer.parentNode.removeChild(layer);
+      }
+    }
+
+    function hasHighlights() {
+      return highlighted.length > 0;
+    }
+
+    function highlightPath(path, opts) {
       clearHighlights();
       (path || []).forEach((s, i) => {
-        if (s.el && s.el.isConnected) {
-          s.el.classList.add("cmp-highlight-show");
-          s.el.setAttribute("data-cmp-step", String(i + 1));
-          highlighted.push(s.el);
+        const el = resolveShowChip(s);
+        if (el && el.isConnected) {
+          el.classList.add("cmp-highlight-show");
+          // Path order stays in result.path (stop i+1). Never paint digits
+          // on chips — including 2, 3, … — and never copy District's
+          // data-time-selection="1".
+          el.removeAttribute("data-cmp-step");
+          highlighted.push(el);
         }
       });
-      if (path && path[0] && path[0].el && path[0].el.scrollIntoView) {
+      syncMovieTicks(path);
+      const firstChip = highlighted[0];
+      if (opts && opts.scroll === false) {
+        /* rescan / overlay paint — do not jump the listing */
+      } else if (firstChip && firstChip.scrollIntoView) {
         try {
-          path[0].el.scrollIntoView({ behavior: "smooth", block: "center" });
+          firstChip.scrollIntoView({ behavior: "smooth", block: "center" });
         } catch (_) {
           /* ignore */
         }
       }
+      requestAnimationFrame(layoutAllMovieTicks);
+    }
+
+    function syncMovieTicks(path) {
+      clearMovieTicks();
+      const seen = new Set();
+      (path || []).forEach((s) => {
+        const row = findMovieRow(s);
+        if (!row || seen.has(row)) return;
+        seen.add(row);
+        const tick = placeMovieTick(row);
+        if (tick) movieTicks.push(tick);
+      });
     }
 
     function render() {
@@ -396,6 +612,7 @@
       setOnChange,
       setRefreshHandler,
       highlightPath,
+      hasHighlights,
       clearHighlights,
       destroy,
       render,
@@ -439,5 +656,10 @@
 
   global.CinemaPanel = {
     createPanelController,
+    resolveShowChip,
+    findMovieRow,
+    placeMovieTick,
+    layoutMovieTick,
+    layoutAllMovieTicks,
   };
 })(typeof globalThis !== "undefined" ? globalThis : window);

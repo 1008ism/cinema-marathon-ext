@@ -311,7 +311,10 @@
   word-break: break-word;
 }
 
-/* Highlight on host page showtimes */
+/* Highlight on host page showtimes — only the chosen marathon path.
+   Badge is a plain circle with no digit (not 1, 2, 3, …). Stop order lives
+   in the scheduler / panel list only. Never use host attributes such as
+   District data-time-selection. */
 .cmp-highlight-show {
   outline: 2px solid #a855f7 !important;
   outline-offset: 2px !important;
@@ -321,21 +324,59 @@
 }
 
 .cmp-highlight-show::after {
-  content: attr(data-cmp-step);
+  content: none;
+}
+
+.cmp-highlight-show::before {
+  content: "";
   position: absolute;
   top: -8px;
   right: -8px;
   background: #7c3aed;
-  color: #fff;
-  font-size: 10px;
-  font-weight: 700;
-  font-family: system-ui, sans-serif;
+  color: transparent;
+  font-size: 0;
+  line-height: 0;
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   z-index: 2;
   pointer-events: none;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Movie-row tick: document overlay, not a flex child of District’s card.
+   Positioned with getBoundingClientRect in the white page gutter left of
+   the grey movie card so poster/title/showtimes stay pixel-identical. */
+#cmp-movie-ticks {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2147483000;
+}
+
+#cmp-movie-ticks .cmp-movie-tick,
+.cmp-movie-tick {
+  position: fixed;
+  box-sizing: border-box;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  margin: 0;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #7c3aed;
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 10px rgba(109, 40, 217, 0.45);
+  pointer-events: auto;
+}
+
+.cmp-movie-tick svg {
+  width: 14px;
+  height: 14px;
+  display: block;
 }

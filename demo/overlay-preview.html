@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Overlay preview — Cinema Marathon UI</title>
+    <link rel="stylesheet" href="../src/ui/panel.css" />
+    <link rel="stylesheet" href="../src/adapters/district.css" />
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+        background: #e8e8ed;
+        color: #18181b;
+      }
+      .page {
+        max-width: none;
+        margin: 0;
+        padding: 12px 0;
+      }
+      .CinemaHeader-module-scss-module__P84l1q__header {
+        background: #fff;
+        padding: 12px 16px;
+        margin: 0 16px 12px;
+        border-radius: 12px;
+      }
+      .CinemaHeader-module-scss-module__P84l1q__row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .CinemaHeader-module-scss-module__P84l1q__logo {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background: #e4e4e7;
+        flex: none;
+      }
+      .CinemaHeader-module-scss-module__P84l1q__desktopHeart {
+        margin-left: auto;
+      }
+      .Heart-module-scss-module__CtTt_q__favOff {
+        width: 28px;
+        height: 28px;
+        border: 2px solid #71717a;
+        border-radius: 50%;
+      }
+      .MDPFilterPills-module-scss-module__TEaxXW__footerFiltersWrap {
+        display: flex;
+        gap: 8px;
+        margin: 8px 16px 16px;
+      }
+      .MDPFilterPills-module-scss-module__TEaxXW__primaryFilterPill,
+      .MDPFilterPills-module-scss-module__TEaxXW__filterPill {
+        border: 1px solid #93c5fd;
+        background: #e0f2fe;
+        border-radius: 999px;
+        padding: 6px 12px;
+        list-style: none;
+      }
+      .MovieSessionsListing-module-scss-module__4rcn9q__movieSessions {
+        background: #fff;
+        border-radius: 16px;
+        margin: 8px 16px;
+        padding: 20px 16px;
+        position: relative;
+        list-style: none;
+        box-shadow: 0 1px 3px #0000000a, 0 4px 12px #0000000a;
+      }
+      .MovieSessionsListing-module-scss-module__4rcn9q__col1 {
+        display: flex;
+        align-items: flex-start;
+      }
+      .MovieSessionsListing-module-scss-module__4rcn9q__col1 img {
+        width: 64px;
+        height: 84px;
+        object-fit: cover;
+        border-radius: 8px;
+        background: #d4d4d8;
+        display: block;
+      }
+      .MovieSessionsListing-module-scss-module__4rcn9q__flexBox {
+        display: flex;
+        gap: 16px;
+      }
+      .MovieSessionsListing-module-scss-module__4rcn9q__col2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, 104px);
+        gap: 8px;
+        list-style: none;
+        padding: 0;
+        margin: 16px 0 0;
+      }
+      .MovieSessionsListing-module-scss-module__4rcn9q__timeblock {
+        position: relative;
+      }
+      .MovieSessionsListing-module-scss-module__4rcn9q__time {
+        border: 1px solid #d4d4d8;
+        border-radius: 14px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="CinemaHeader-module-scss-module__P84l1q__header">
+        <div class="CinemaHeader-module-scss-module__P84l1q__row">
+          <div class="CinemaHeader-module-scss-module__P84l1q__logo" id="cinema-logo"></div>
+          <div>
+            <h2>INOX A PVR INOX EXPERIENCE</h2>
+          </div>
+          <div
+            class="CinemaHeader-module-scss-module__P84l1q__desktopHeart"
+            id="cinema-heart"
+          >
+            <div
+              class="Heart-module-scss-module__CtTt_q__favOff"
+              aria-label="Like"
+            ></div>
+          </div>
+        </div>
+      </header>
+      <ul class="MDPFilterPills-module-scss-module__TEaxXW__footerFiltersWrap">
+        <li class="MDPFilterPills-module-scss-module__TEaxXW__primaryFilterPill">
+          Filters
+        </li>
+        <div class="MDPFilterPills-module-scss-module__TEaxXW__filterPillsScroll">
+          <li class="MDPFilterPills-module-scss-module__TEaxXW__filterPill">INSIGNIA</li>
+          <li class="MDPFilterPills-module-scss-module__TEaxXW__filterPill">IMAX</li>
+          <li class="MDPFilterPills-module-scss-module__TEaxXW__filterPill">Hindi</li>
+          <li class="MDPFilterPills-module-scss-module__TEaxXW__filterPill">Tamil</li>
+        </div>
+      </ul>
+      <li
+        class="MovieSessionsListing-module-scss-module__4rcn9q__movieSessions"
+        id="movie-row"
+      >
+        <div class="MovieSessionsListing-module-scss-module__4rcn9q__col1">
+          <a href="#poster-link" id="poster-link">
+            <div class="MovieSessionsListing-module-scss-module__4rcn9q__movieDetailsDiv">
+              <div class="MovieSessionsListing-module-scss-module__4rcn9q__flexBox">
+                <img alt="Hanuman Ansh" />
+                <div>
+                  <div
+                    class="MovieSessionsListing-module-scss-module__4rcn9q__movieDetailsDivHeading"
+                  >
+                    Hanuman Ansh
+                  </div>
+                  <div>U | Hindi</div>
+                </div>
+              </div>
+            </div>
+          </a>
+        </div>
+        <ul class="MovieSessionsListing-module-scss-module__4rcn9q__col2">
+          <li
+            class="MovieSessionsListing-module-scss-module__4rcn9q__timeblock"
+            data-time-selection="1"
+          >
+            <div class="MovieSessionsListing-module-scss-module__4rcn9q__time">
+              11:00 AM
+            </div>
+          </li>
+          <li
+            class="MovieSessionsListing-module-scss-module__4rcn9q__timeblock"
+            data-time-selection="1"
+          >
+            <div class="MovieSessionsListing-module-scss-module__4rcn9q__time">
+              02:15 PM
+            </div>
+          </li>
+          <li
+            class="MovieSessionsListing-module-scss-module__4rcn9q__timeblock"
+            data-time-selection="1"
+          >
+            <div class="MovieSessionsListing-module-scss-module__4rcn9q__time">
+              06:30 PM
+            </div>
+          </li>
+        </ul>
+      </li>
+    </div>
+    <script src="../src/core/time.js"></script>
+    <script src="../src/ui/panel.js"></script>
+    <script>
+      const chips = document.querySelectorAll('[class*="timeblock"]');
+      const panel = CinemaPanel.createPanelController();
+      panel.mount();
+      panel.highlightPath([
+        { title: "Hanuman Ansh", startText: "11:00 AM", el: chips[0] },
+        { title: "Hanuman Ansh", startText: "06:30 PM", el: chips[2] },
+      ]);
+    </script>
+  </body>
+</html>
